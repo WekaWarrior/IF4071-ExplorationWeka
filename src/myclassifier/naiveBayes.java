@@ -27,18 +27,23 @@ public class naiveBayes {
         this.data = data;
         NBClassifier = new NaiveBayes();
     }
+    public void setData(Instances data){
+        this.data = data;
+    }
     public void CrossValidation() throws Exception{
-        Instances train = data;
-        // train classifier
-        //Classifier cls = new NaiveBayes();
-        NBClassifier.buildClassifier(train);
-        //NBClassifier = cls;
-        // evaluate classifier and print some statistics
-        Evaluation eval = new Evaluation(train);
-        eval.crossValidateModel(NBClassifier, train, 10, new Random(1));
-        System.out.println(eval.toSummaryString("\nResults\n======\n", false));
-        System.out.println(eval.toClassDetailsString("\n=== Detailed Accuracy By Class ===\n"));
-        System.out.println(eval.toMatrixString());
+        if(data!=null){
+            Instances train = data;
+            // train classifier
+            NBClassifier.buildClassifier(train);
+            // evaluate classifier and print some statistics
+            Evaluation eval = new Evaluation(train);
+            eval.crossValidateModel(NBClassifier, train, 10, new Random(1));
+            System.out.println(eval.toSummaryString("\nResults\n======\n", false));
+            System.out.println(eval.toClassDetailsString("\n=== Detailed Accuracy By Class ===\n"));
+            System.out.println(eval.toMatrixString());
+        }else{
+            System.out.println("Data is null");
+        }
     }
     public void SaveModel() throws Exception{
         SerializationHelper.write("NaiveBayes.model", NBClassifier);
