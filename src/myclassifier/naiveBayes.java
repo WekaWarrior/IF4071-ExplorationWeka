@@ -47,15 +47,30 @@ public class naiveBayes {
             System.out.println("Data is null");
         }
     }
+    public void PercentageSplit(double percent) throws Exception{
+        // Percent split
+        int trainSize = (int) Math.round(data.numInstances() * percent / 100);
+        int testSize = data.numInstances() - trainSize;
+        Instances train = new Instances(data, 0, trainSize);
+        Instances test = new Instances(data, trainSize, testSize);
+        // train classifier
+        NBClassifier.buildClassifier(train);
+        // evaluate classifier and print some statistics
+        Evaluation eval = new Evaluation(train);
+        eval.evaluateModel(NBClassifier, test);
+        System.out.println(eval.toSummaryString("\nResults\n======\n", false));
+        System.out.println(eval.toClassDetailsString("\n=== Detailed Accuracy By Class ===\n"));
+        System.out.println(eval.toMatrixString());
+    }
     public void SaveModel() throws Exception{
         SerializationHelper.write("NaiveBayes.model", NBClassifier);
     }
     public void LoadModel() throws Exception{
         NBClassifier = (Classifier) SerializationHelper.read("NaiveBayes.model");
     }
-    public void Klasifikasi() throws Exception{
+    public void Klasifikasi(String filename) throws Exception{
         // load unlabeled data and set class attribute
-        Instances unlabeled = ConverterUtils.DataSource.read("unlabeled.arff");
+        Instances unlabeled = ConverterUtils.DataSource.read("unlabeled_"+filename+".arff");
         unlabeled.setClassIndex(unlabeled.numAttributes() - 1);
         // create copy
         Instances labeled = new Instances(unlabeled);
@@ -65,7 +80,7 @@ public class naiveBayes {
             labeled.instance(i).setClassValue(clsLabel);
         }
         // save newly labeled data
-        ConverterUtils.DataSink.write("labeled.arff", labeled);
+        ConverterUtils.DataSink.write("labeled_"+filename+".arff", labeled);
 
         //print hasil
 
