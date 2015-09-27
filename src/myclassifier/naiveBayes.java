@@ -11,6 +11,8 @@ import weka.classifiers.Evaluation;
 import weka.classifiers.bayes.NaiveBayes;
 import weka.core.Instances;
 import weka.core.SerializationHelper;
+import weka.core.Utils;
+import weka.core.converters.ConverterUtils;
 
 /**
  *
@@ -50,5 +52,32 @@ public class naiveBayes {
     }
     public void LoadModel() throws Exception{
         NBClassifier = (Classifier) SerializationHelper.read("NaiveBayes.model");
+    }
+    public void Klasifikasi() throws Exception{
+        // load unlabeled data and set class attribute
+        Instances unlabeled = ConverterUtils.DataSource.read("unlabeled.arff");
+        unlabeled.setClassIndex(unlabeled.numAttributes() - 1);
+        // create copy
+        Instances labeled = new Instances(unlabeled);
+        // label instances
+        for (int i = 0; i < unlabeled.numInstances(); i++) {
+            double clsLabel = NBClassifier.classifyInstance(labeled.instance(i));
+            labeled.instance(i).setClassValue(clsLabel);
+        }
+        // save newly labeled data
+        ConverterUtils.DataSink.write("labeled.arff", labeled);
+
+        //print hasil
+
+        System.out.println("# - actual - predicted - distribution");
+        for (int i = 0; i < labeled.numInstances(); i++) {
+
+        double pred = NBClassifier.classifyInstance(labeled.instance(i));
+            double[] dist = NBClassifier.distributionForInstance(labeled.instance(i));
+            System.out.print((i+1) + " - ");
+            System.out.print(labeled.instance(i).toString(labeled.classIndex()) + " - ");
+            System.out.print(labeled.classAttribute().value((int) pred) + " - ");
+            System.out.println(Utils.arrayToString(dist));
+        }
     }
 }
