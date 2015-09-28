@@ -9,6 +9,7 @@ import java.util.Scanner;
 import weka.core.Instances;
 import weka.core.converters.ConverterUtils.DataSource;
 import weka.filters.Filter;
+import weka.filters.supervised.instance.Resample;
 import weka.filters.unsupervised.attribute.Remove;
 /**
  *
@@ -72,6 +73,16 @@ public class MyClassifier {
         remove.setOptions(options);                           // set options
         remove.setInputFormat(oldData);                          // inform filter about dataset **AFTER** setting options
         Instances newData = Filter.useFilter(oldData, remove);
+        return newData;
+    }
+    public static Instances resampleInstances(Instances oldData, double sampleSizePercent) throws Exception {
+        String Filteroptions="-B 1.0";
+        Resample sampler = new Resample();
+        sampler.setOptions(weka.core.Utils.splitOptions(Filteroptions));
+        sampler.setRandomSeed((int)System.currentTimeMillis());
+        sampler.setSampleSizePercent(sampleSizePercent);
+        sampler.setInputFormat(oldData);
+        Instances newData = Resample.useFilter(oldData,sampler);
         return newData;
     }
 }
