@@ -24,7 +24,7 @@ public class ClassDistribution{
     private double w_perClass[];         
 
     /** Total weight instances. */
-    private double weightTotal;            
+    private double totalWeights;            
 
     /**
      * Constructor distribution.
@@ -36,7 +36,7 @@ public class ClassDistribution{
       for (int i=0;i<numSubdataset;i++){
         w_perClassPerSubdataset[i] = new double [numClasses];
       }
-      weightTotal = 0;
+      totalWeights = 0;
     }
 
 
@@ -50,7 +50,7 @@ public class ClassDistribution{
     w_perClassPerSubdataset = new double [1][dataSet.numClasses()];
     w_perSubdataset = new double [1];
     w_perClass = new double [dataSet.numClasses()];
-    weightTotal = 0;
+    totalWeights = 0;
     
     Enumeration E = dataSet.enumerateInstances();
     while (E.hasMoreElements()){
@@ -75,7 +75,7 @@ public class ClassDistribution{
 
     w_perClassPerSubdataset = new double [modelToUse.numSubsets()][0];
     w_perSubdataset = new double [modelToUse.numSubsets()];
-    weightTotal = 0;
+    totalWeights = 0;
     w_perClass = new double [source.numClasses()];
     for (int i = 0; i < modelToUse.numSubsets(); i++){
       w_perClassPerSubdataset[i] = new double [source.numClasses()];
@@ -104,9 +104,9 @@ public class ClassDistribution{
         w_perClass[i] = sourceDist.w_perClass[i];
     }
     
-    weightTotal = sourceDist.weightTotal;
+    totalWeights = sourceDist.totalWeights;
     w_perSubdataset = new double [1];
-    w_perSubdataset[0] = weightTotal;
+    w_perSubdataset[0] = totalWeights;
   }
 
   /**
@@ -126,10 +126,10 @@ public class ClassDistribution{
       w_perClass[i] = sourceDist.w_perClass[i];
     }
     
-    weightTotal = sourceDist.weightTotal;
+    totalWeights = sourceDist.totalWeights;
     w_perSubdataset = new double [2];
     w_perSubdataset[0] = sourceDist.w_perSubdataset[index];
-    w_perSubdataset[1] = weightTotal-w_perSubdataset[0];
+    w_perSubdataset[1] = totalWeights-w_perSubdataset[0];
   }
   
   /**
@@ -188,7 +188,7 @@ public class ClassDistribution{
   * Return the total weight of the class distribution
   */
   public double getTotalWeight(){
-    return weightTotal;
+    return totalWeights;
   }
 
   
@@ -206,7 +206,7 @@ public class ClassDistribution{
     w_perClassPerSubdataset[subDatasetIndex][classIndex] = w_perClassPerSubdataset[subDatasetIndex][classIndex]+weight;
     w_perSubdataset[subDatasetIndex] = w_perSubdataset[subDatasetIndex]+weight;
     w_perClass[classIndex] = w_perClass[classIndex]+weight;
-    weightTotal = weightTotal+weight;
+    totalWeights = totalWeights+weight;
   }
 
   /**
@@ -260,10 +260,10 @@ public class ClassDistribution{
     
     valueProbs = new double [w_perSubdataset.length];
     for (int i=0;i<w_perSubdataset.length;i++){
-      if (weightTotal == 0){
+      if (totalWeights == 0){
 	valueProbs[i] = 1.0 / valueProbs.length;
       }else{
-	valueProbs[i] = w_perSubdataset[i] / weightTotal;
+	valueProbs[i] = w_perSubdataset[i] / totalWeights;
       }
     }
     
@@ -274,7 +274,7 @@ public class ClassDistribution{
 	classIndex = (int)instance.classValue();
 	weight = instance.weight();
 	w_perClass[classIndex] = w_perClass[classIndex]+weight;
-	weightTotal += weight;
+	totalWeights += weight;
 	for (int i = 0; i < w_perSubdataset.length; i++) {
 	  newWeight = valueProbs[i] * weight;
 	  w_perClassPerSubdataset[i][classIndex] += newWeight;
@@ -288,26 +288,23 @@ public class ClassDistribution{
    *
    * @exception Exception if something goes wrong
    */
-  /*public final void addRange(int bagIndex,Instances source,
-			     int startIndex, int lastPlusOne)
+    public final void addRange(int subDatasetIndex,Instances dataSet, int startIndex, int lastIndex)
        throws Exception {
 
-    double sumOfWeights = 0;
-    int classIndex;
-    Instance instance;
-    int i;
-
-    for (i = startIndex; i < lastPlusOne; i++) {
-      instance = (Instance) source.instance(i);
-      classIndex = (int)instance.classValue();
-      sumOfWeights = sumOfWeights+instance.weight();
-      m_perClassPerBag[bagIndex][classIndex] += instance.weight();
-      m_perClass[classIndex] += instance.weight();
+        double sumOfWeights = 0;
+        int classIndex;
+        Instance data;
+        
+        for (int i = startIndex; i < lastIndex; i++) {
+          data = (Instance) dataSet.instance(i);
+          classIndex = (int) data.classValue();
+          sumOfWeights += data.weight();
+          w_perClassPerSubdataset[subDatasetIndex][classIndex] += data.weight();
+          w_perClass[classIndex] += data.weight();
+        }
+        w_perSubdataset[subDatasetIndex] += sumOfWeights;
+        totalWeights += sumOfWeights;
     }
-    m_perBag[bagIndex] += sumOfWeights;
-    totaL += sumOfWeights;
-  }
-  */
   /**
    * Adds given instance to all bags weighting it according to given weights.
    *
@@ -324,27 +321,24 @@ public class ClassDistribution{
       w_perClassPerSubdataset[i][classIndex] += weight;
       w_perSubdataset[i] += weight;
       w_perClass[classIndex] += weight;
-      weightTotal += weight;
+      totalWeights += weight;
     }
   }
   
   /**
    * Checks if at least two bags contain a minimum number of instances.
    */
-  /*public final boolean check(double minNoObj) {
+  public boolean isSplitable(double minInstance) {
 
     int counter = 0;
-    int i;
 
-    for (i=0;i<m_perBag.length;i++)
-      if (Utils.grOrEq(m_perBag[i],minNoObj))
-	counter++;
-    if (counter > 1)
-      return true;
-    else
-      return false;
+    for (int i=0;i<w_perSubdataset.length;i++){
+        if(w_perSubdataset[i] >= minInstance){
+            counter++;
+        }
+    }
+    return (counter > 1);
   }
-  */
   /**
    * Clones distribution (Deep copy of distribution).
    */
@@ -532,7 +526,7 @@ public class ClassDistribution{
    */
   public final double numIncorrect() {
 
-    return weightTotal-numCorrect();
+    return totalWeights-numCorrect();
   }
 
   /**
@@ -575,7 +569,7 @@ public class ClassDistribution{
   public double laplaceProb(int classIndex) {
 
     return (w_perClass[classIndex] + 1) / 
-      (weightTotal + (double) w_perClass.length);
+      (totalWeights + (double) w_perClass.length);
   }
 
   /**
@@ -596,8 +590,8 @@ public class ClassDistribution{
    */
   public double prob(int classIndex) {
 
-    if (weightTotal == 0){
-      return w_perClass[classIndex]/weightTotal;
+    if (totalWeights == 0){
+      return w_perClass[classIndex]/totalWeights;
     } else {
       return 0;
     }
@@ -652,29 +646,27 @@ public class ClassDistribution{
   }
   */
   /**
-   * Shifts all instances in given range from one bag to another one.
+   * Move instances in given range from one bag to another one.
    *
    * @exception Exception if something goes wrong
    */
-  /*public final void shiftRange(int from,int to,Instances source,
-			       int startIndex,int lastPlusOne) 
+    public void moveInstancesWithRange(int from , int to,Instances dataSet, int startIndex,int lastIndex) 
        throws Exception {
     
-    int classIndex;
-    double weight;
-    Instance instance;
-    int i;
-
-    for (i = startIndex; i < lastPlusOne; i++) {
-      instance = (Instance) source.instance(i);
-      classIndex = (int)instance.classValue();
-      weight = instance.weight();
-      m_perClassPerBag[from][classIndex] -= weight;
-      m_perClassPerBag[to][classIndex] += weight;
-      m_perBag[from] -= weight;
-      m_perBag[to] += weight;
+        int classIndex;
+        double weight;
+        Instance data;
+        
+        for (int i = startIndex; i < lastIndex; i++){
+            data = (Instance) dataSet.instance(i);
+            classIndex = (int) data.classValue();
+            weight = data.weight();
+            w_perClassPerSubdataset[from][classIndex] -= weight;
+            w_perClassPerSubdataset[to][classIndex] += weight;
+            w_perSubdataset[from] -= weight;
+            w_perSubdataset[to] += weight;
+        }
     }
-  }*/
   
     /**
      * Mengembalikan hasil dari log2
@@ -693,7 +685,7 @@ public class ClassDistribution{
     private double calcInitialEntropy(){
         double initEntropy = 0;
         for(int i=0; i<getNumClasses(); i++){
-            double p = w_perClass[i]/weightTotal;
+            double p = w_perClass[i]/totalWeights;
             initEntropy = initEntropy + (p * log2(p));
         }
         return -initEntropy;
@@ -718,10 +710,10 @@ public class ClassDistribution{
                 finalEntropy = finalEntropy + (p * log2(p));
             }
             finalEntropy = -1*finalEntropy;
-            initialEntropy = initialEntropy - (w_perSubdataset[i]/weightTotal*finalEntropy);
+            initialEntropy = initialEntropy - (w_perSubdataset[i]/totalWeights*finalEntropy);
         }
 
-        unknownValues = instancesTotalWeight-weightTotal;
+        unknownValues = instancesTotalWeight-totalWeights;
         unknownRate = unknownValues/instancesTotalWeight;
         return ((1-unknownRate)*initialEntropy);
     }
@@ -735,7 +727,7 @@ public class ClassDistribution{
         double gainRatio;
         for(int i=0; i<getNumSubdataset(); i++)
         {
-            double p = w_perSubdataset[i]/weightTotal;
+            double p = w_perSubdataset[i]/totalWeights;
             splitInformation = splitInformation - (p * log2(p));
         }
         gainRatio = infoGain / splitInformation;
