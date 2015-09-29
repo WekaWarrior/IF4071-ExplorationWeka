@@ -42,12 +42,10 @@ public abstract class C45ClassifierSplitModel {
      */
     public abstract int getSubsetIndex(Instance instance) throws Exception;
 
-    public String leftSide(Instances data){
-        return null;
-    }
-    public String rightSide(int index,Instances data){
-        return null;
-    }
+    public abstract String leftSide(Instances data);
+    
+    public abstract String rightSide(int index,Instances data);
+    
     /**
     * Sets distribution associated with model.
     */
