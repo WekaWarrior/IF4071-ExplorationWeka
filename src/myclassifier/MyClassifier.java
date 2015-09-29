@@ -49,20 +49,23 @@ public class MyClassifier {
         }else{
             System.out.println("Not Use Preprocessing");
         }
-        System.out.println("\nMETHOD");
+        System.out.println("\nMETHOD CLASSIFIER");
         System.out.println("1. ID3");
         System.out.println("2. Naive Bayes");
-        System.out.println("Silahkan pilih method");
+        System.out.println("Silahkan pilih method classifier");
         
         pilih = Read.nextInt();
         if(pilih==1){
             DT a = new DT(data);
-            //System.out.print("\n*****10 Cross Validation*****");
-            //a.CrossValidation();
+            System.out.print("\n*****10 Cross Validation*****");
+            a.CrossValidation();
+            a.SaveModel();
+            a.LoadModel();
+            a.Klasifikasi(path);
+            System.out.println("\n*****Percentage Split*****");
             System.out.println("Silahkan masukkan persentase untuk percentage split");
             percent = Read.nextDouble();
             a.PercentageSplit(percent);
-            System.out.println("\n*****Percentage Split*****");
             a.SaveModel();
             a.LoadModel();
             a.Klasifikasi(path);
@@ -71,10 +74,13 @@ public class MyClassifier {
             naiveBayes b = new naiveBayes(data);
             System.out.print("\n*****10 Cross Validation*****");
             b.CrossValidation();
-            /*System.out.println("Silahkan masukkan persentase untuk percentage split");
+            b.SaveModel();
+            b.LoadModel();
+            b.Klasifikasi(path);
+            System.out.print("\n*****Percentage Split*****");
+            System.out.println("Silahkan masukkan persentase untuk percentage split");
             percent = Read.nextDouble();
             b.PercentageSplit(percent);
-            System.out.print("\n*****Percentage Split*****");*/
             b.SaveModel();
             b.LoadModel();
             b.Klasifikasi(path);
