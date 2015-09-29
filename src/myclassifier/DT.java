@@ -32,6 +32,20 @@ public class DT {
     public void setData(Instances data){
         this.data = data;
     }
+    public void TestData(Instances dataTest) throws Exception{
+        if(data!=null){
+            Instances train = data;
+            // train classifier
+            DTClassifier.buildClassifier(train);
+            // evaluate classifier and print some statistics
+            Evaluation eval = new Evaluation(dataTest);
+            System.out.println(eval.toSummaryString("\nResults\n======\n", false));
+            System.out.println(eval.toClassDetailsString("\n=== Detailed Accuracy By Class ===\n"));
+            System.out.println(eval.toMatrixString());
+        }else{
+            System.out.println("Data is null");
+        }
+    }
     public void CrossValidation() throws Exception{
         if(data!=null){
             Instances train = data;

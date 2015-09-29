@@ -26,26 +26,26 @@ public class MyClassifier {
         
         System.out.println("Silahkan masukkan nama dataset");
         Scanner Read = new Scanner(System.in);
-        //String path = Read.next();
-        String path = "weather.nominal.arff";
+        String path = Read.next();
+        //String path = "weather.nominal.arff";
         System.out.println("Nama yg dimasukkan: "+path);
         Instances data = loadData(path);
         
         System.out.println("Choose preprocessing");
-        System.out.println("1 = Remove Attrubutes");
+        System.out.println("1 = Remove Attributes");
         System.out.println("2 = Filter Resample");
         System.out.println("else = Not use it");
         int pilih = Read.nextInt();
         if(pilih==1){
             //remove attributes
             System.out.println("Use Remove Attributes");
-            data = removeAttributes(data);
+            data = removeAttributes(data,"1");
         }else if(pilih==2){
             //filter Resample
             System.out.println("Use Filter Resample");
             System.out.print("Sample Size Percent: ");
             percent = Read.nextDouble();
-            data = resampleInstances(data,percent);
+            data = supervisedResample(data,percent);
         }else{
             System.out.println("Not Use Preprocessing");
         }
@@ -100,10 +100,10 @@ public class MyClassifier {
         }
         return data;
     }
-    public static Instances removeAttributes(Instances oldData) throws Exception{
+    public static Instances removeAttributes(Instances oldData, String attIndex) throws Exception{
         String[] options = new String[2];
         options[0] = "-R";                                    // "range"
-        options[1] = "1";                                     // first attribute
+        options[1] = attIndex;                                     // first attribute
         
         Remove remove = new Remove();                         // new instance of filter
         remove.setOptions(options);                           // set options
@@ -111,9 +111,20 @@ public class MyClassifier {
         Instances newData = Filter.useFilter(oldData, remove);
         return newData;
     }
-    public static Instances resampleInstances(Instances oldData, double sampleSizePercent) throws Exception {
+    public static Instances supervisedResample(Instances oldData, double sampleSizePercent) throws Exception {
         String Filteroptions="-B 1.0";
         Resample sampler = new Resample();
+        sampler.setOptions(weka.core.Utils.splitOptions(Filteroptions));
+        sampler.setRandomSeed((int)System.currentTimeMillis());
+        sampler.setSampleSizePercent(sampleSizePercent);
+        sampler.setInputFormat(oldData);
+        Instances newData = Resample.useFilter(oldData,sampler);
+        return newData;
+    }
+    
+    public static Instances unsupervisedResample(Instances oldData, double sampleSizePercent) throws Exception {
+        String Filteroptions="-B 1.0";
+        weka.filters.unsupervised.instance.Resample sampler = new weka.filters.unsupervised.instance.Resample();
         sampler.setOptions(weka.core.Utils.splitOptions(Filteroptions));
         sampler.setRandomSeed((int)System.currentTimeMillis());
         sampler.setSampleSizePercent(sampleSizePercent);
