@@ -22,34 +22,62 @@ public class MyClassifier {
      */
     public static void main(String[] args) throws Exception{
         // TODO code application logic here
-        System.out.println("Silahkan masukkan dataset path");
+        double percent;
+        
+        System.out.println("Silahkan masukkan nama dataset");
         Scanner Read = new Scanner(System.in);
-        String path = Read.next();
-        //set data instances
+        //String path = Read.next();
+        String path = "weather.nominal.arff";
+        System.out.println("Nama yg dimasukkan: "+path);
         Instances data = loadData(path);
-        //remove attributes
-        data = removeAttributes(data);
-        System.out.println("METHOD");
+        
+        System.out.println("Choose preprocessing");
+        System.out.println("1 = Remove Attrubutes");
+        System.out.println("2 = Filter Resample");
+        System.out.println("else = Not use it");
+        int pilih = Read.nextInt();
+        if(pilih==1){
+            //remove attributes
+            System.out.println("Use Remove Attributes");
+            data = removeAttributes(data);
+        }else if(pilih==2){
+            //filter Resample
+            System.out.println("Use Filter Resample");
+            System.out.print("Sample Size Percent: ");
+            percent = Read.nextDouble();
+            data = resampleInstances(data,percent);
+        }else{
+            System.out.println("Not Use Preprocessing");
+        }
+        System.out.println("\nMETHOD");
         System.out.println("1. ID3");
         System.out.println("2. Naive Bayes");
         System.out.println("Silahkan pilih method");
         
-        int pilih = Read.nextInt();
+        pilih = Read.nextInt();
         if(pilih==1){
             DT a = new DT(data);
-            System.out.print("\n*****10 Cross Validation*****");
-            a.CrossValidation();
+            //System.out.print("\n*****10 Cross Validation*****");
+            //a.CrossValidation();
+            System.out.println("Silahkan masukkan persentase untuk percentage split");
+            percent = Read.nextDouble();
+            a.PercentageSplit(percent);
+            System.out.println("\n*****Percentage Split*****");
             a.SaveModel();
             a.LoadModel();
-            //a.Klasifikasi();
+            a.Klasifikasi(path);
         }
         else if(pilih==2){
             naiveBayes b = new naiveBayes(data);
             System.out.print("\n*****10 Cross Validation*****");
             b.CrossValidation();
+            /*System.out.println("Silahkan masukkan persentase untuk percentage split");
+            percent = Read.nextDouble();
+            b.PercentageSplit(percent);
+            System.out.print("\n*****Percentage Split*****");*/
             b.SaveModel();
             b.LoadModel();
-            //b.Klasifikasi();
+            b.Klasifikasi(path);
         }
         else{
             System.out.println("Angka yg anda masukkan salah");
@@ -57,11 +85,13 @@ public class MyClassifier {
     }
     public static Instances loadData(String path) throws Exception{
         DataSource source = new DataSource(path);
-        Instances data = source.getDataSet();
+        Instances data;
+        data = source.getDataSet();
         // setting class attribute if the data format does not provide this information
         // For example, the XRFF format saves the class attribute information as well
-        if (data.classIndex() == -1)
+        if (data.classIndex() == -1){
             data.setClassIndex(data.numAttributes() - 1);
+        }
         return data;
     }
     public static Instances removeAttributes(Instances oldData) throws Exception{

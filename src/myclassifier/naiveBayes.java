@@ -64,13 +64,15 @@ public class naiveBayes {
     }
     public void SaveModel() throws Exception{
         SerializationHelper.write("NaiveBayes.model", NBClassifier);
+        System.out.println("Model has been saved");
     }
     public void LoadModel() throws Exception{
         NBClassifier = (Classifier) SerializationHelper.read("NaiveBayes.model");
+        System.out.println("Model has been loaded");
     }
     public void Klasifikasi(String filename) throws Exception{
         // load unlabeled data and set class attribute
-        Instances unlabeled = ConverterUtils.DataSource.read("unlabeled_"+filename+".arff");
+        Instances unlabeled = ConverterUtils.DataSource.read("unlabeled_"+filename);
         unlabeled.setClassIndex(unlabeled.numAttributes() - 1);
         // create copy
         Instances labeled = new Instances(unlabeled);
@@ -80,10 +82,10 @@ public class naiveBayes {
             labeled.instance(i).setClassValue(clsLabel);
         }
         // save newly labeled data
-        ConverterUtils.DataSink.write("labeled_"+filename+".arff", labeled);
+        ConverterUtils.DataSink.write("labeled_"+filename, labeled);
 
         //print hasil
-
+        System.out.println("Classification Result");
         System.out.println("# - actual - predicted - distribution");
         for (int i = 0; i < labeled.numInstances(); i++) {
 

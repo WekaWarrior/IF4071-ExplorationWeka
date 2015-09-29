@@ -8,7 +8,7 @@ package myclassifier;
 import java.util.Random;
 import weka.classifiers.Classifier;
 import weka.classifiers.Evaluation;
-import weka.classifiers.trees.Id3;
+import weka.classifiers.trees.J48;
 import weka.core.Instances;
 import weka.core.SerializationHelper;
 import weka.core.Utils;
@@ -23,11 +23,11 @@ public class DT {
     Instances data;
     public DT(){
         data = null;
-        DTClassifier = new Id3();
+        DTClassifier = new J48();
     }
     public DT(Instances data){
         this.data = data;
-        DTClassifier = new Id3();
+        DTClassifier = new J48();
     }
     public void setData(Instances data){
         this.data = data;
@@ -64,13 +64,15 @@ public class DT {
     }
     public void SaveModel() throws Exception{
         SerializationHelper.write("DT.model", DTClassifier);
+        System.out.println("Model has been saved");
     }
     public void LoadModel() throws Exception{
         DTClassifier = (Classifier) SerializationHelper.read("DT.model");
+        System.out.println("Model has been loaded");
     }
     public void Klasifikasi(String filename) throws Exception{
         // load unlabeled data and set class attribute
-        Instances unlabeled = ConverterUtils.DataSource.read("unlabeled_"+filename+".arff");
+        Instances unlabeled = ConverterUtils.DataSource.read("unlabeled_"+filename);
         unlabeled.setClassIndex(unlabeled.numAttributes() - 1);
         // create copy
         Instances labeled = new Instances(unlabeled);
@@ -80,10 +82,10 @@ public class DT {
             labeled.instance(i).setClassValue(clsLabel);
         }
         // save newly labeled data
-        ConverterUtils.DataSink.write("labeled_"+filename+".arff", labeled);
+        ConverterUtils.DataSink.write("labeled_"+filename, labeled);
 
         //print hasil
-
+        System.out.println("Classification Result");
         System.out.println("# - actual - predicted - distribution");
         for (int i = 0; i < labeled.numInstances(); i++) {
 
