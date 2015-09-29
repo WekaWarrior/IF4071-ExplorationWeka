@@ -24,31 +24,31 @@ public class MyClassifierTree implements CapabilitiesHandler{
     static final long serialVersionUID = -8722249377542734193L;
 
     /** The model selection method. */  
-    protected ModelSelection m_toSelectModel;     
+    protected ModelSelection toSelectModel;  
 
     /** Local model at node. */
-    protected ClassifierSplitModel m_localModel;  
+    protected ClassifierSplitModel localModel;
 
     /** References to sons. */
-    protected MyClassifierTree [] m_sons;           
+    protected MyClassifierTree [] childTree;
 
     /** True if node is leaf. */
-    protected boolean m_isLeaf;                   
+    protected boolean isLeaf;
 
     /** True if node is empty. */
-    protected boolean m_isEmpty;                  
+    protected boolean isEmpty;                  
 
     /** The training instances. */
-    protected Instances m_train;                  
+    protected Instances train;                  
 
     /** The pruning instances. */
-    protected Distribution m_test;     
+    protected Distribution test;
 
     /** The id for the node. */
-    protected int m_id;
+    protected int id;
 
     /** 
-     * For getting a unique ID when outputting the tree (hashcode isn't
+     * For getting a unique ID when outputting the tree (hash code isn't
      * guaranteed unique) 
      */
     private static long PRINTED_NODES = 0;
@@ -59,7 +59,6 @@ public class MyClassifierTree implements CapabilitiesHandler{
      * @return the next unique node ID.
      */
     protected static long nextID() {
-
       return PRINTED_NODES ++;
     }
 
@@ -68,7 +67,6 @@ public class MyClassifierTree implements CapabilitiesHandler{
      * between repeated separate print types)
      */
     protected static void resetID() {
-
       PRINTED_NODES = 0;
     }
 
@@ -76,14 +74,13 @@ public class MyClassifierTree implements CapabilitiesHandler{
      * Constructor. 
      */
     public MyClassifierTree(ModelSelection toSelectLocModel) {
-
-      m_toSelectModel = toSelectLocModel;
+      toSelectModel = toSelectLocModel;
     }
 
     /**
      * Returns default capabilities of the classifier tree.
      *
-     * @return      the capabilities of this classifier tree
+     * @return  the capabilities of this classifier tree
      */
     public Capabilities getCapabilities() {
       Capabilities result = new Capabilities(this);
@@ -119,30 +116,29 @@ public class MyClassifierTree implements CapabilitiesHandler{
      * @throws Exception if something goes wrong
      */
     public void buildTree(Instances data, boolean keepData) throws Exception {
-
-      Instances [] localInstances;
-
+      Instances[] localInstances;
       if (keepData) {
-        m_train = data;
+            train = data;
       }
-      m_test = null;
-      m_isLeaf = false;
-      m_isEmpty = false;
-      m_sons = null;
-      m_localModel = m_toSelectModel.selectModel(data);
-      if (m_localModel.numSubsets() > 1) {
-        localInstances = m_localModel.split(data);
-        data = null;
-        m_sons = new MyClassifierTree [m_localModel.numSubsets()];
-        for (int i = 0; i < m_sons.length; i++) {
-          m_sons[i] = getNewTree(localInstances[i]);
-          localInstances[i] = null;
-        }
+      test = null;
+      isLeaf = false;
+      isEmpty = false;
+      childTree = null;
+      localModel = toSelectModel.selectModel(data);
+      if (localModel.numSubsets() > 1) {
+            localInstances = localModel.split(data);
+            data = null;
+            childTree = new MyClassifierTree [localModel.numSubsets()];
+            for (int i = 0; i < childTree.length; i++) {
+                childTree[i] = getNewTree(localInstances[i]);
+                localInstances[i] = null;
+            }
       }else{
-        m_isLeaf = true;
-        if (Utils.eq(data.sumOfWeights(), 0))
-          m_isEmpty = true;
-        data = null;
+            isLeaf = true;
+            if (Utils.eq(data.sumOfWeights(), 0)){
+                isEmpty = true;
+            }
+            data = null;
       }
     }
 
@@ -155,38 +151,67 @@ public class MyClassifierTree implements CapabilitiesHandler{
      * @param keepData is training Data to be kept?
      * @throws Exception if something goes wrong
      */
-    public void buildTree(Instances train, Instances test, boolean keepData)
-         throws Exception {
+    public void buildTree(Instances train, Instances test, boolean keepData) throws Exception {
+        //local variable
+        Instances [] localTrain, localTest;
+        int i;
 
-      Instances [] localTrain, localTest;
-      int i;
-
-      if (keepData) {
-        m_train = train;
-      }
-      m_isLeaf = false;
-      m_isEmpty = false;
-      m_sons = null;
-      m_localModel = m_toSelectModel.selectModel(train, test);
-      m_test = new Distribution(test, m_localModel);
-      if (m_localModel.numSubsets() > 1) {
-        localTrain = m_localModel.split(train);
-        localTest = m_localModel.split(test);
-        train = test = null;
-        m_sons = new MyClassifierTree [m_localModel.numSubsets()];
-        for (i=0;i<m_sons.length;i++) {
-          m_sons[i] = getNewTree(localTrain[i], localTest[i]);
-          localTrain[i] = null;
-          localTest[i] = null;
+        if (keepData) {
+            this.train = train;
         }
-      }else{
-        m_isLeaf = true;
-        if (Utils.eq(train.sumOfWeights(), 0))
-          m_isEmpty = true;
-        train = test = null;
-      }
+        isLeaf = false;
+        isEmpty = false;
+        childTree = null;
+        localModel = toSelectModel.selectModel(train, test);
+        this.test = new Distribution(test, localModel);
+        if (localModel.numSubsets() > 1) {
+            localTrain = localModel.split(train);
+            localTest = localModel.split(test);
+            train = test = null;
+            childTree = new MyClassifierTree [localModel.numSubsets()];
+            for (i=0;i<childTree.length;i++) {
+                childTree[i] = getNewTree(localTrain[i], localTest[i]);
+                localTrain[i] = null;
+                localTest[i] = null;
+            }
+        }else{
+            //tidak ada 
+            isLeaf = true;
+            if (Utils.eq(train.sumOfWeights(), 0))
+                isEmpty = true;
+            train = test = null;
+        }
+    }
+    /**
+     * Returns a newly created tree.
+     *
+     * @param data the training data
+     * @return the generated tree
+     * @throws Exception if something goes wrong
+     */
+    protected MyClassifierTree getNewTree(Instances data) throws Exception {
+      MyClassifierTree newTree = new MyClassifierTree(toSelectModel);
+      newTree.buildTree(data, false);
+
+      return newTree;
     }
 
+    /**
+     * Returns a newly created tree.
+     *
+     * @param train the training data
+     * @param test the pruning data.
+     * @return the generated tree
+     * @throws Exception if something goes wrong
+     */
+    protected MyClassifierTree getNewTree(Instances train, Instances test) 
+         throws Exception {
+
+      MyClassifierTree newTree = new MyClassifierTree(toSelectModel);
+      newTree.buildTree(train, test, false);
+
+      return newTree;
+    }
     /** 
      * Classifies an instance.
      *
@@ -220,11 +245,13 @@ public class MyClassifierTree implements CapabilitiesHandler{
      */
     public final void cleanup(Instances justHeaderInfo) {
 
-      m_train = justHeaderInfo;
-      m_test = null;
-      if (!m_isLeaf)
-        for (int i = 0; i < m_sons.length; i++)
-          m_sons[i].cleanup(justHeaderInfo);
+      train = justHeaderInfo;
+      test = null;
+      if (!isLeaf){
+            for (int i = 0; i < childTree.length; i++){
+                childTree[i].cleanup(justHeaderInfo);
+            }
+      }
     }
 
     /** 
@@ -235,8 +262,7 @@ public class MyClassifierTree implements CapabilitiesHandler{
      * @return the distribution
      * @throws Exception if something goes wrong
      */
-    public final double [] distributionForInstance(Instance instance,
-                                                   boolean useLaplace) 
+    public final double [] distributionForInstance(Instance instance,boolean useLaplace) 
          throws Exception {
 
       double [] doubles = new double[instance.numClasses()];
@@ -248,12 +274,11 @@ public class MyClassifierTree implements CapabilitiesHandler{
           doubles[i] = getProbsLaplace(i, instance, 1);
         }
       }
-
       return doubles;
     }
 
     /**
-     * Assigns a uniqe id to every node in the tree.
+     * Assigns a unique id to every node in the tree.
      * 
      * @param lastID the last ID that was assign
      * @return the new current ID
@@ -262,10 +287,10 @@ public class MyClassifierTree implements CapabilitiesHandler{
 
       int currLastID = lastID + 1;
 
-      m_id = currLastID;
-      if (m_sons != null) {
-        for (int i = 0; i < m_sons.length; i++) {
-          currLastID = m_sons[i].assignIDs(currLastID);
+      id = currLastID;
+      if (childTree != null) {
+        for (int i = 0; i < childTree.length; i++) {
+          currLastID = childTree[i].assignIDs(currLastID);
         }
       }
       return currLastID;
@@ -278,29 +303,29 @@ public class MyClassifierTree implements CapabilitiesHandler{
      * @throws Exception if something goes wrong
      * @return the tree as graph
      */
-    public String graph() throws Exception {
+    /*public String graph() throws Exception {
 
       StringBuffer text = new StringBuffer();
 
       assignIDs(-1);
       text.append("digraph J48Tree {\n");
-      if (m_isLeaf) {
-        text.append("N" + m_id 
+      if (isLeaf) {
+        text.append("N" + id 
                     + " [label=\"" + 
-                    Utils.quote(m_localModel.dumpLabel(0,m_train)) + "\" " + 
+                    Utils.quote(localModel.dumpLabel(0,train)) + "\" " + 
                     "shape=box style=filled ");
-        if (m_train != null && m_train.numInstances() > 0) {
-          text.append("data =\n" + m_train + "\n");
+        if (train != null && train.numInstances() > 0) {
+          text.append("data =\n" + train + "\n");
           text.append(",\n");
 
         }
         text.append("]\n");
       }else {
-        text.append("N" + m_id 
+        text.append("N" + id 
                     + " [label=\"" + 
-                    Utils.quote(m_localModel.leftSide(m_train)) + "\" ");
-        if (m_train != null && m_train.numInstances() > 0) {
-          text.append("data =\n" + m_train + "\n");
+                    Utils.quote(localModel.leftSide(train)) + "\" ");
+        if (train != null && train.numInstances() > 0) {
+          text.append("data =\n" + train + "\n");
           text.append(",\n");
        }
         text.append("]\n");
@@ -308,7 +333,7 @@ public class MyClassifierTree implements CapabilitiesHandler{
       }
 
       return text.toString() +"}\n";
-    }
+    }*/
 
     /**
      * Returns tree in prefix order.
@@ -316,38 +341,38 @@ public class MyClassifierTree implements CapabilitiesHandler{
      * @throws Exception if something goes wrong
      * @return the prefix order
      */
-    public String prefix() throws Exception {
+    /*public String prefix() throws Exception {
 
       StringBuffer text;
 
       text = new StringBuffer();
-      if (m_isLeaf) {
-        text.append("["+m_localModel.dumpLabel(0,m_train)+"]");
+      if (isLeaf) {
+        text.append("["+localModel.dumpLabel(0,train)+"]");
       }else {
         prefixTree(text);
       }
 
       return text.toString();
-    }
+    }*/
 
     /**
      * Returns source code for the tree as an if-then statement. The 
      * class is assigned to variable "p", and assumes the tested 
-     * instance is named "i". The results are returned as two stringbuffers: 
+     * instance is named "i". The results are returned as two string buffers: 
      * a section of code for assignment of the class, and a section of
      * code containing support code (eg: other support methods).
      *
-     * @param className the classname that this static classifier has
-     * @return an array containing two stringbuffers, the first string containing
+     * @param className the class name that this static classifier has
+     * @return an array containing two string buffers, the first string containing
      * assignment code, and the second containing source for support code.
      * @throws Exception if something goes wrong
      */
-    public StringBuffer [] toSource(String className) throws Exception {
+    /*public StringBuffer [] toSource(String className) throws Exception {
 
       StringBuffer [] result = new StringBuffer [2];
-      if (m_isLeaf) {
+      if (isLeaf) {
         result[0] = new StringBuffer("    p = " 
-          + m_localModel.distribution().maxClass(0) + ";\n");
+          + localModel.distribution().maxClass(0) + ";\n");
         result[1] = new StringBuffer("");
       } else {
         StringBuffer text = new StringBuffer();
@@ -356,30 +381,30 @@ public class MyClassifierTree implements CapabilitiesHandler{
         long printID = MyClassifierTree.nextID();
 
         text.append("  static double N") 
-          .append(Integer.toHexString(m_localModel.hashCode()) + printID)
+          .append(Integer.toHexString(localModel.hashCode()) + printID)
           .append("(Object []i) {\n")
           .append("    double p = Double.NaN;\n");
 
         text.append("    if (")
-          .append(m_localModel.sourceExpression(-1, m_train))
+          .append(localModel.sourceExpression(-1, train))
           .append(") {\n");
         text.append("      p = ")
-          .append(m_localModel.distribution().maxClass(0))
+          .append(localModel.distribution().maxClass(0))
           .append(";\n");
         text.append("    } ");
-        for (int i = 0; i < m_sons.length; i++) {
-          text.append("else if (" + m_localModel.sourceExpression(i, m_train) 
+        for (int i = 0; i < childTree.length; i++) {
+          text.append("else if (" + localModel.sourceExpression(i, train) 
                       + ") {\n");
-          if (m_sons[i].m_isLeaf) {
+          if (childTree[i].isLeaf) {
             text.append("      p = " 
-                        + m_localModel.distribution().maxClass(i) + ";\n");
+                        + localModel.distribution().maxClass(i) + ";\n");
           } else {
-            StringBuffer [] sub = m_sons[i].toSource(className);
+            StringBuffer [] sub = childTree[i].toSource(className);
             text.append(sub[0]);
             atEnd.append(sub[1]);
           }
           text.append("    } ");
-          if (i == m_sons.length - 1) {
+          if (i == childTree.length - 1) {
             text.append('\n');
           }
         }
@@ -387,12 +412,12 @@ public class MyClassifierTree implements CapabilitiesHandler{
         text.append("    return p;\n  }\n");
 
         result[0] = new StringBuffer("    p = " + className + ".N");
-        result[0].append(Integer.toHexString(m_localModel.hashCode()) +  printID)
+        result[0].append(Integer.toHexString(localModel.hashCode()) +  printID)
           .append("(i);\n");
         result[1] = text.append(atEnd);
       }
       return result;
-    }
+    }*/
 
     /**
      * Returns number of leaves in tree structure.
@@ -400,17 +425,16 @@ public class MyClassifierTree implements CapabilitiesHandler{
      * @return the number of leaves
      */
     public int numLeaves() {
+        int N = 0;
 
-      int num = 0;
-      int i;
-
-      if (m_isLeaf)
-        return 1;
-      else
-        for (i=0;i<m_sons.length;i++)
-          num = num+m_sons[i].numLeaves();
-
-      return num;
+        if (isLeaf){
+              return 1;
+        }else{
+            for (int i=0;i<childTree.length;i++){
+                N = N + childTree[i].numLeaves();
+            }
+        }
+        return N;
     }
 
     /**
@@ -419,15 +443,14 @@ public class MyClassifierTree implements CapabilitiesHandler{
      * @return the number of nodes
      */
     public int numNodes() {
+        int no = 1;
 
-      int no = 1;
-      int i;
-
-      if (!m_isLeaf)
-        for (i=0;i<m_sons.length;i++)
-          no = no+m_sons[i].numNodes();
-
-      return no;
+        if (!isLeaf){
+            for (int i=0;i<childTree.length;i++){
+                no = no + childTree[i].numNodes();
+            }
+        }
+        return no;
     }
 
     /**
@@ -435,55 +458,22 @@ public class MyClassifierTree implements CapabilitiesHandler{
      * 
      * @return the tree structure
      */
+    @Override
     public String toString() {
-
-      try {
-        StringBuffer text = new StringBuffer();
-
-        if (m_isLeaf) {
-          text.append(": ");
-          text.append(m_localModel.dumpLabel(0,m_train));
-        }else
-          dumpTree(0,text);
-        text.append("\n\nNumber of Leaves  : \t"+numLeaves()+"\n");
-        text.append("\nSize of the tree : \t"+numNodes()+"\n");
-
-        return text.toString();
-      } catch (Exception e) {
-        return "Can't print classification tree.";
-      }
-    }
-
-    /**
-     * Returns a newly created tree.
-     *
-     * @param data the training data
-     * @return the generated tree
-     * @throws Exception if something goes wrong
-     */
-    protected MyClassifierTree getNewTree(Instances data) throws Exception {
-
-      MyClassifierTree newTree = new MyClassifierTree(m_toSelectModel);
-      newTree.buildTree(data, false);
-
-      return newTree;
-    }
-
-    /**
-     * Returns a newly created tree.
-     *
-     * @param train the training data
-     * @param test the pruning data.
-     * @return the generated tree
-     * @throws Exception if something goes wrong
-     */
-    protected MyClassifierTree getNewTree(Instances train, Instances test) 
-         throws Exception {
-
-      MyClassifierTree newTree = new MyClassifierTree(m_toSelectModel);
-      newTree.buildTree(train, test, false);
-
-      return newTree;
+        try {
+            StringBuffer text = new StringBuffer();
+            if (isLeaf) {
+              text.append(": ");
+              text.append(localModel.dumpLabel(0,train));
+            }else{
+              dumpTree(0,text);
+            }
+            text.append("\n\nNumber of Leaves  : \t"+numLeaves()+"\n");
+            text.append("\nSize of the tree : \t"+numNodes()+"\n");
+            return text.toString();
+        }catch (Exception e) {
+            return "Can't print classification tree.";
+        }
     }
 
     /**
@@ -493,23 +483,23 @@ public class MyClassifierTree implements CapabilitiesHandler{
      * @param text for outputting the structure
      * @throws Exception if something goes wrong
      */
-    private void dumpTree(int depth, StringBuffer text) 
-         throws Exception {
+    private void dumpTree(int depth, StringBuffer text) throws Exception {
+        int i,j;
 
-      int i,j;
-
-      for (i=0;i<m_sons.length;i++) {
-        text.append("\n");;
-        for (j=0;j<depth;j++)
-          text.append("|   ");
-        text.append(m_localModel.leftSide(m_train));
-        text.append(m_localModel.rightSide(i, m_train));
-        if (m_sons[i].m_isLeaf) {
-          text.append(": ");
-          text.append(m_localModel.dumpLabel(i,m_train));
-        }else
-          m_sons[i].dumpTree(depth+1,text);
-      }
+        for (i=0;i<childTree.length;i++) {
+            text.append("\n");;
+            for (j=0;j<depth;j++){
+                text.append("|   ");
+            }
+            text.append(localModel.leftSide(train));
+            text.append(localModel.rightSide(i, train));
+            if (childTree[i].isLeaf) {
+                text.append(": ");
+                text.append(localModel.dumpLabel(i,train));
+            }else{
+                childTree[i].dumpTree(depth+1,text);
+            }
+        }
     }
 
     /**
@@ -518,36 +508,36 @@ public class MyClassifierTree implements CapabilitiesHandler{
      * @param text for outputting the tree
      * @throws Exception if something goes wrong
      */
-    private void graphTree(StringBuffer text) throws Exception {
+    /*private void graphTree(StringBuffer text) throws Exception {
 
-      for (int i = 0; i < m_sons.length; i++) {
-        text.append("N" + m_id  
+      for (int i = 0; i < childTree.length; i++) {
+        text.append("N" + id  
                     + "->" + 
-                    "N" + m_sons[i].m_id +
-                    " [label=\"" + Utils.quote(m_localModel.rightSide(i,m_train).trim()) + 
+                    "N" + childTree[i].id +
+                    " [label=\"" + Utils.quote(localModel.rightSide(i,train).trim()) + 
                     "\"]\n");
-        if (m_sons[i].m_isLeaf) {
-          text.append("N" + m_sons[i].m_id +
-                      " [label=\""+ Utils.quote(m_localModel.dumpLabel(i,m_train))+"\" "+ 
+        if (childTree[i].isLeaf) {
+          text.append("N" + childTree[i].id +
+                      " [label=\""+ Utils.quote(localModel.dumpLabel(i,train))+"\" "+ 
                       "shape=box style=filled ");
-          if (m_train != null && m_train.numInstances() > 0) {
-            text.append("data =\n" + m_sons[i].m_train + "\n");
+          if (train != null && train.numInstances() > 0) {
+            text.append("data =\n" + childTree[i].train + "\n");
             text.append(",\n");
           }
           text.append("]\n");
         } else {
-          text.append("N" + m_sons[i].m_id +
-                      " [label=\""+ Utils.quote(m_sons[i].m_localModel.leftSide(m_train))+ 
+          text.append("N" + childTree[i].id +
+                      " [label=\""+ Utils.quote(childTree[i].localModel.leftSide(train))+ 
                       "\" ");
-          if (m_train != null && m_train.numInstances() > 0) {
-            text.append("data =\n" + m_sons[i].m_train + "\n");
+          if (train != null && train.numInstances() > 0) {
+            text.append("data =\n" + childTree[i].train + "\n");
             text.append(",\n");
           }
           text.append("]\n");
-          m_sons[i].graphTree(text);
+          childTree[i].graphTree(text);
         }
       }
-    }
+    }*/
 
     /**
      * Prints the tree in prefix form
@@ -555,27 +545,27 @@ public class MyClassifierTree implements CapabilitiesHandler{
      * @param text the buffer to output the prefix form to
      * @throws Exception if something goes wrong
      */
-    private void prefixTree(StringBuffer text) throws Exception {
+    /*private void prefixTree(StringBuffer text) throws Exception {
 
       text.append("[");
-      text.append(m_localModel.leftSide(m_train)+":");
-      for (int i = 0; i < m_sons.length; i++) {
+      text.append(localModel.leftSide(train)+":");
+      for (int i = 0; i < childTree.length; i++) {
         if (i > 0) {
           text.append(",\n");
         }
-        text.append(m_localModel.rightSide(i, m_train));
+        text.append(localModel.rightSide(i, train));
       }
-      for (int i = 0; i < m_sons.length; i++) {
-        if (m_sons[i].m_isLeaf) {
+      for (int i = 0; i < childTree.length; i++) {
+        if (childTree[i].isLeaf) {
           text.append("[");
-          text.append(m_localModel.dumpLabel(i,m_train));
+          text.append(localModel.dumpLabel(i,train));
           text.append("]");
         } else {
-          m_sons[i].prefixTree(text);
+          childTree[i].prefixTree(text);
         }
       }
       text.append("]");
-    }
+    }*/
 
     /**
      * Help method for computing class probabilities of 
@@ -588,32 +578,30 @@ public class MyClassifierTree implements CapabilitiesHandler{
      * @throws Exception if something goes wrong
      */
     private double getProbsLaplace(int classIndex, Instance instance, double weight) 
-      throws Exception {
+        throws Exception {
 
-      double prob = 0;
+        double prob = 0;
 
-      if (m_isLeaf) {
-        return weight * localModel().classProbLaplace(classIndex, instance, -1);
-      } else {
-        int treeIndex = localModel().whichSubset(instance);
-        if (treeIndex == -1) {
-          double[] weights = localModel().weights(instance);
-          for (int i = 0; i < m_sons.length; i++) {
-            if (!son(i).m_isEmpty) {
-          prob += son(i).getProbsLaplace(classIndex, instance, 
-                                               weights[i] * weight);
+        if (isLeaf) {
+            return weight * localModel.classProbLaplace(classIndex, instance, -1);
+        }else {
+            int treeIndex = localModel.whichSubset(instance);
+            if (treeIndex == -1) {
+                double[] weights = localModel.weights(instance);
+                for (int i = 0; i < childTree.length; i++) {
+                    if (!child(i).isEmpty) {
+                        prob += child(i).getProbsLaplace(classIndex, instance,weights[i] * weight);
+                    }
+                }
+                return prob;
+            }else{
+                if (child(treeIndex).isEmpty) {
+                    return weight * localModel.classProbLaplace(classIndex, instance, treeIndex);
+                }else{
+                    return child(treeIndex).getProbsLaplace(classIndex, instance, weight);
+                }
             }
-          }
-          return prob;
-        } else {
-          if (son(treeIndex).m_isEmpty) {
-            return weight * localModel().classProbLaplace(classIndex, instance, 
-                                                          treeIndex);
-          } else {
-            return son(treeIndex).getProbsLaplace(classIndex, instance, weight);
-          }
         }
-      }
     }
 
     /**
@@ -627,47 +615,43 @@ public class MyClassifierTree implements CapabilitiesHandler{
      * @throws Exception if something goes wrong
      */
     private double getProbs(int classIndex, Instance instance, double weight) 
-      throws Exception {
+        throws Exception {
 
-      double prob = 0;
+        double prob = 0;
 
-      if (m_isLeaf) {
-        return weight * localModel().classProb(classIndex, instance, -1);
-      } else {
-        int treeIndex = localModel().whichSubset(instance);
-        if (treeIndex == -1) {
-          double[] weights = localModel().weights(instance);
-          for (int i = 0; i < m_sons.length; i++) {
-            if (!son(i).m_isEmpty) {
-              prob += son(i).getProbs(classIndex, instance, 
-                                      weights[i] * weight);
+        if (isLeaf) {
+            return weight * localModel.classProb(classIndex, instance, -1);
+        }else{
+            int treeIndex = localModel.whichSubset(instance);
+            if (treeIndex == -1) {
+                double[] weights = localModel.weights(instance);
+                for (int i = 0; i < childTree.length; i++) {
+                    if (!child(i).isEmpty) {
+                        prob += child(i).getProbs(classIndex, instance, weights[i] * weight);
+                    }
+                }
+                return prob;
+            }else{
+                if (child(treeIndex).isEmpty) {
+                    return weight * localModel.classProb(classIndex, instance, treeIndex);
+                }else{
+                    return child(treeIndex).getProbs(classIndex, instance, weight);
+                }
             }
-          }
-          return prob;
-        } else {
-          if (son(treeIndex).m_isEmpty) {
-            return weight * localModel().classProb(classIndex, instance, 
-                                                   treeIndex);
-          } else {
-            return son(treeIndex).getProbs(classIndex, instance, weight);
-          }
         }
-      }
     }
 
     /**
      * Method just exists to make program easier to read.
      */
-    private ClassifierSplitModel localModel() {
-
-      return (ClassifierSplitModel)m_localModel;
-    }
+    /*private ClassifierSplitModel localModel() {
+        return (ClassifierSplitModel)localModel;
+    }*/
 
     /**
      * Method just exists to make program easier to read.
      */
-    private MyClassifierTree son(int index) {
-
-      return (MyClassifierTree)m_sons[index];
+    private MyClassifierTree child(int index) {
+        return (MyClassifierTree)childTree[index];
     }
 }
