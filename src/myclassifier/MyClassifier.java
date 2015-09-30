@@ -38,7 +38,7 @@ public class MyClassifier {
         int pilih = Read.nextInt();
         if(pilih==1){
             //remove attributes
-            System.out.println("Use Remove Attributes");
+            System.out.println("Use Remove Attributes 1");
             data = removeAttributes(data,"1");
         }else if(pilih==2){
             //filter Resample
